@@ -23,6 +23,12 @@ public class ClientResource {
         this.service = service;
     }
 
+    @GetMapping
+    public String status(){
+        log.info("Obtendo o status do microservice de clientes");
+        return "ok";
+    }
+
     @PostMapping
     public ResponseEntity save(@RequestBody ClientSaveRequest request) {
         log.info("POST /clientes - Recebendo solicitação para salvar cliente: {}", request);
