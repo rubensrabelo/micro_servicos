@@ -2,7 +2,7 @@ spring:
   application:
     name: mscards
   datasource:
-    url: jdbc:postgresql://localhost:5432/tb_cards
+    url: jdbc:postgresql://localhost:5432/bd_cards
     username: postgres
     password: root
     driver-class-name: org.postgresql.Driver
