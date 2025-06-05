@@ -1,22 +1,20 @@
 package io.github.rubensrabelo.mscreditappraiser.application;
 
-import ch.qos.logback.core.net.SyslogOutputStream;
-import feign.Client;
 import feign.FeignException;
+import io.github.rubensrabelo.mscreditappraiser.application.exceptions.CardRequestErrorException;
 import io.github.rubensrabelo.mscreditappraiser.application.exceptions.ClientDataNotFoundException;
 import io.github.rubensrabelo.mscreditappraiser.application.exceptions.MicroservicesCommunicationErrorException;
 import io.github.rubensrabelo.mscreditappraiser.domain.model.*;
 import io.github.rubensrabelo.mscreditappraiser.infra.clients.CardResourceClient;
 import io.github.rubensrabelo.mscreditappraiser.infra.clients.ClientResourceClient;
+import io.github.rubensrabelo.mscreditappraiser.infra.mqueue.RequestIssuanceCardPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,10 +22,15 @@ public class CreditAppraiserService {
 
     private final ClientResourceClient clientResourceClient;
     private final CardResourceClient cardResourceClient;
+    private final RequestIssuanceCardPublisher issuanceCardPublisher;
 
-    public CreditAppraiserService(ClientResourceClient clientResourceClient, CardResourceClient cardResourceClient) {
+    public CreditAppraiserService(
+            ClientResourceClient clientResourceClient,
+            CardResourceClient cardResourceClient,
+            RequestIssuanceCardPublisher issuanceCardPublisher) {
         this.clientResourceClient = clientResourceClient;
         this.cardResourceClient = cardResourceClient;
+        this.issuanceCardPublisher = issuanceCardPublisher;
     }
 
     public ClientStatus getCustomerStatus(String cpf) throws ClientDataNotFoundException, MicroservicesCommunicationErrorException {
@@ -80,6 +83,16 @@ public class CreditAppraiserService {
             if(status == HttpStatus.NOT_FOUND.value())
                 throw new ClientDataNotFoundException();
             throw new MicroservicesCommunicationErrorException(e.getMessage(), status);
+        }
+    }
+
+    public ProtocolRequestCard requestIssueCard(DataRequestIssueCard data) {
+        try {
+            issuanceCardPublisher.requestCard(data);
+            var protocol = UUID.randomUUID().toString();
+            return new ProtocolRequestCard(protocol);
+        } catch (Exception e) {
+            throw new CardRequestErrorException(e.getMessage());
         }
     }
 }

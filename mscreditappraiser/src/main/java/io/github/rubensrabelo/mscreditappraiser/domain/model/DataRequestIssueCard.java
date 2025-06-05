@@ -1,9 +1,10 @@
-package io.github.rubensrabelo.mscards.domain;
+package io.github.rubensrabelo.mscreditappraiser.domain.model;
 
 import java.math.BigDecimal;
 import java.util.Objects;
 
 public class DataRequestIssueCard {
+
     private Long idCard;
     private String cpf;
     private String address;
